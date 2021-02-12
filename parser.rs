@@ -29,30 +29,36 @@ pub fn parse_input(args : Vec<String>) -> (Data, Config) {
         pattern : "".to_string(),
     };
 
-
     let mut i = 0;
     while i < args.len() {
-        if data.pattern == "" && args[i].chars().next().unwrap().to_string() != "-" {
+        let arg_char = args[i].chars().next();
+        let mut arg : String = "".to_string(); 
+        match arg_char {
+            Some(arg_char) => arg = arg_char.to_string(),
+            None => panic!("error with parse input"),
+        }
+
+        if data.pattern == "" && arg != "-" {
             data.pattern = args[i].to_string();
             i += 1;
             continue;
         }
 
-        if args[i].chars().next().unwrap().to_string() == "-" {
+        if arg == "-" {
             data.options.push(args[i].to_string());
             if data.options.last().unwrap() == &"-m".to_string() {
                 i += 1;
                 let num = args[i].parse::<i32>();
                 match num {
-                    Ok(num) => config.num = num,
-                    Err(_)  => panic!("error with option -m"),
+                    Ok(num)  => config.num = num,
+                    Err(num) => panic!("error with option -m: {:?}", num),
                 }
             }
             i += 1;
             continue;
         }
 
-        if args[i].chars().next().unwrap().to_string() != "-" {
+        if arg != "-" {
             data.files.push(args[i].to_string());
             i += 1;
             continue;
