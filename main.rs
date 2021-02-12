@@ -91,28 +91,28 @@ fn main() {
         }
     }
 
-    let mut num_matches_c = 0;
+    let mut num_matches_m = 0;
 
     if files.len() == 0 {
-        let mut num_matches_m = 0;
+        let mut num_matches_c = 0;
         let stdin = io::stdin();
         for string in stdin.lock().lines() {
-            if num_matches_c >= config.num {
+            if num_matches_m >= config.num {
                 break;
             }
             match string {
                 Ok(string) => {
                     if is_match(&pattern, &string, &config) {
                         if config.c {
-                            num_matches_c += 1;
                             num_matches_m += 1;
+                            num_matches_c += 1;
                         }
                         else {
-                            num_matches_c += 1;
+                            num_matches_m += 1;
                             println!("{}", get_result_string(&pattern, &string, "stdin", &config));
                         }
                     }
-                    if num_matches_c >= config.num {
+                    if num_matches_m >= config.num {
                         break;
                     }
                 },
@@ -121,13 +121,13 @@ fn main() {
         }
 
         if config.c {
-            println!("{}", get_result_string_c(num_matches_m, "stdin", &config));
+            println!("{}", get_result_string_c(num_matches_c, "stdin", &config));
         }
     }
 
     for file in files {
-        let mut num_matches_m = 0;
-        if num_matches_c >= config.num {
+        let mut num_matches_c = 0;
+        if num_matches_m >= config.num {
             break;
         }
         let infile = fs::read_to_string(&file).expect("error with read file");
@@ -135,23 +135,23 @@ fn main() {
         for string in result {
             if is_match(&pattern, &string, &config) {
                 if config.c {
-                    num_matches_c += 1;
                     num_matches_m += 1;
+                    num_matches_c += 1;
                 }
                 else {
                     println!("{}", get_result_string(&pattern, &string, &file, &config));
-                    num_matches_c += 1;
-                    if num_matches_c >= config.num {
+                    num_matches_m += 1;
+                    if num_matches_m >= config.num {
                         break;
                     }
                 }
-                if num_matches_c >= config.num {
+                if num_matches_m >= config.num {
                     break;
                 }
             }
         }
         if config.c {
-            println!("{}", get_result_string_c(num_matches_m, &file, &config));
+            println!("{}", get_result_string_c(num_matches_c, &file, &config));
         }
     }
 }
