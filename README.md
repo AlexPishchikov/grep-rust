@@ -8,11 +8,11 @@
 
 #### Compile
 
-`rustc main.rs`
+`rustc main.rs -o grep`
 
 #### Syntax
 
-`./main [OPTIONS] PATTERN [FILES]`
+`./grep [OPTIONS] PATTERN [FILES]`
 
 #### OPTIONS
 
