@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::io::{self, BufRead};
 
 struct Config {
     v : bool,
@@ -18,7 +19,7 @@ fn main() {
     let mut options : Vec<String> = Vec::new();
     let mut files : Vec<String> = Vec::new();
     let mut pattern : String = "".to_string();
-    for arg in &args {
+    for arg in args {
         if pattern == "" && arg.chars().next().unwrap().to_string() != "-" {
             pattern = arg.to_string();
             continue;
@@ -37,6 +38,7 @@ fn main() {
 
     if files.len() > 1 {
         config.H = true;
+        config.h = false;
     }
 
     for option in options {
@@ -61,19 +63,26 @@ fn main() {
         }
     }
 
+    if files.len() == 0 {
+        let stdin = io::stdin();
+        for string in stdin.lock().lines() {
+            match string {
+                Ok(string) => {
+                    if is_match(&pattern, &string, &config) {
+                        println!("{}", get_result_string(&pattern, &string, "stdin", &config));
+                    }
+                },
+                Err(_) => panic!("error with read line from stdin"),
+            }
+        }
+    }
+
     for file in files {
-        let infile = fs::read_to_string(&file).expect("Something went wrong reading the file");
+        let infile = fs::read_to_string(&file).expect("error with read file");
         let result = infile.split('\n');
         for string in result {
             if is_match(&pattern, &string, &config) {
-                let split_string : Vec<&str> = string.split(&pattern).collect();
-                if config.H {
-                    print!("{}: ", file);
-                }
-                for i in 0..split_string.len() - 1 {
-                    print!("{}\x1b[41m{}\x1b[0m", split_string[i], &pattern);
-                }
-                println!("{}", split_string[split_string.len() - 1]);
+                println!("{}", get_result_string(&pattern, &string, &file, &config));
             }
         }
     }
@@ -81,4 +90,20 @@ fn main() {
 
 fn is_match(pattern : &str, string : &str, config : &Config) -> bool {
     return string.contains(pattern) ^ config.v;
+}
+
+fn get_result_string(pattern : &str, string : &str, filename : &str, config : &Config) -> String {
+    let mut result_string : String = "".to_owned();
+    let split_string : Vec<&str> = string.split(&pattern).collect();
+
+    if config.H {
+        result_string = format!("{}: ", &filename);
+    }
+
+    for i in 0..split_string.len() - 1 {
+        result_string = format!("{}{}\x1b[41m{}\x1b[0m", result_string, split_string[i], &pattern);
+    }
+
+    result_string = format!("{}{}", result_string, split_string[split_string.len() - 1]);
+    return result_string;
 }
