@@ -6,6 +6,7 @@ struct Config {
     v : bool,
     h : bool,
     H : bool,
+    c : bool,
     m : bool,
     num : i32,
 }
@@ -15,6 +16,7 @@ fn main() {
         v : false,
         h : true,
         H : false,
+        c : false,
         m : false,
         num : i32::MAX,
     };
@@ -75,6 +77,10 @@ fn main() {
                 config.h = false;
             },
 
+            "-c" => {
+                config.c = true;
+            },
+
             "-m" => {
                 config.m = true;
             },
@@ -85,40 +91,67 @@ fn main() {
         }
     }
 
-    let mut current_num = 0;
+    let mut num_matches_c = 0;
 
     if files.len() == 0 {
+        let mut num_matches_m = 0;
         let stdin = io::stdin();
         for string in stdin.lock().lines() {
-            if current_num >= config.num {
+            if num_matches_c >= config.num {
                 break;
             }
             match string {
                 Ok(string) => {
                     if is_match(&pattern, &string, &config) {
-                        current_num += 1;
-                        println!("{}", get_result_string(&pattern, &string, "stdin", &config));
+                        if config.c {
+                            num_matches_c += 1;
+                            num_matches_m += 1;
+                        }
+                        else {
+                            num_matches_c += 1;
+                            println!("{}", get_result_string(&pattern, &string, "stdin", &config));
+                        }
+                    }
+                    if num_matches_c >= config.num {
+                        break;
                     }
                 },
                 Err(_) => panic!("error with read line from stdin"),
             }
         }
+
+        if config.c {
+            println!("{}", get_result_string_c(num_matches_m, "stdin", &config));
+        }
     }
 
     for file in files {
-        if current_num >= config.num {
+        let mut num_matches_m = 0;
+        if num_matches_c >= config.num {
             break;
         }
         let infile = fs::read_to_string(&file).expect("error with read file");
         let result = infile.split('\n');
         for string in result {
             if is_match(&pattern, &string, &config) {
-                println!("{}", get_result_string(&pattern, &string, &file, &config));
-                current_num += 1;
-                if current_num >= config.num {
+                if config.c {
+                    num_matches_c += 1;
+                    num_matches_m += 1;
+                }
+                else {
+                    println!("{}", get_result_string(&pattern, &string, &file, &config));
+                    num_matches_c += 1;
+                    if num_matches_c >= config.num {
+                        break;
+                    }
+                }
+                if num_matches_c >= config.num {
                     break;
                 }
             }
+        }
+        if config.c {
+            println!("{}", get_result_string_c(num_matches_m, &file, &config));
         }
     }
 }
@@ -140,5 +173,14 @@ fn get_result_string(pattern : &str, string : &str, filename : &str, config : &C
     }
 
     result_string = format!("{}{}", result_string, split_string[split_string.len() - 1]);
+    return result_string;
+}
+
+fn get_result_string_c(num : i32, filename : &str, config : &Config) -> String {
+    let mut result_string : String = "".to_owned();
+    if config.H {
+        result_string = format!("{}: ", &filename);
+    }
+    result_string = format!("{}{}", result_string, num);
     return result_string;
 }
