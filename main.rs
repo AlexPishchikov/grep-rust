@@ -6,6 +6,8 @@ struct Config {
     v : bool,
     h : bool,
     H : bool,
+    m : bool,
+    num : i32,
 }
 
 fn main() {
@@ -13,25 +15,41 @@ fn main() {
         v : false,
         h : true,
         H : false,
+        m : false,
+        num : i32::MAX,
     };
 
     let args : Vec<String> = env::args().skip(1).collect();
+
     let mut options : Vec<String> = Vec::new();
     let mut files : Vec<String> = Vec::new();
     let mut pattern : String = "".to_string();
-    for arg in args {
-        if pattern == "" && arg.chars().next().unwrap().to_string() != "-" {
-            pattern = arg.to_string();
+
+    let mut i = 0;
+    while i < args.len() {
+        if pattern == "" && args[i].chars().next().unwrap().to_string() != "-" {
+            pattern = args[i].to_string();
+            i += 1;
             continue;
         }
 
-        if arg.chars().next().unwrap().to_string() == "-" {
-            options.push(arg.to_string());
+        if args[i].chars().next().unwrap().to_string() == "-" {
+            options.push(args[i].to_string());
+            if options.last().unwrap() == &"-m".to_string() {
+                i += 1;
+                let num = args[i].parse::<i32>();
+                match num {
+                    Ok(num) => config.num = num,
+                    Err(_)  => panic!("error with option -m"),
+                }
+            }
+            i += 1;
             continue;
         }
 
-        if arg.chars().next().unwrap().to_string() != "-" {
-            files.push(arg.to_string());
+        if args[i].chars().next().unwrap().to_string() != "-" {
+            files.push(args[i].to_string());
+            i += 1;
             continue;
         }
     }
@@ -57,18 +75,28 @@ fn main() {
                 config.h = false;
             },
 
+            "-m" => {
+                config.m = true;
+            },
+
             _ => {
                 panic!("unknown option {}", option);
             }
         }
     }
 
+    let mut current_num = 0;
+
     if files.len() == 0 {
         let stdin = io::stdin();
         for string in stdin.lock().lines() {
+            if current_num >= config.num {
+                break;
+            }
             match string {
                 Ok(string) => {
                     if is_match(&pattern, &string, &config) {
+                        current_num += 1;
                         println!("{}", get_result_string(&pattern, &string, "stdin", &config));
                     }
                 },
@@ -78,11 +106,18 @@ fn main() {
     }
 
     for file in files {
+        if current_num >= config.num {
+            break;
+        }
         let infile = fs::read_to_string(&file).expect("error with read file");
         let result = infile.split('\n');
         for string in result {
             if is_match(&pattern, &string, &config) {
                 println!("{}", get_result_string(&pattern, &string, &file, &config));
+                current_num += 1;
+                if current_num >= config.num {
+                    break;
+                }
             }
         }
     }
