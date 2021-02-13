@@ -1,48 +1,46 @@
 use std::fs;
 use std::io::{self, BufRead};
 
-use parser::*;
+use parser::{Data, Config};
 
 pub fn grep(data : Data, config : Config) {
-    let mut num_matches_m = 0;
-
     if data.files.len() == 0 {
-        let mut num_matches_c = 0;
-        let stdin = io::stdin();
-        for string in stdin.lock().lines() {
-            if num_matches_m >= config.num {
-                break;
-            }
-            match string {
-                Ok(string) => {
-                    if is_match(&data.pattern, &string, &config) {
-                        if config.c {
-                            num_matches_m += 1;
-                            num_matches_c += 1;
-                        }
-                        else {
-                            num_matches_m += 1;
-                            println!("{}", get_result_string(&data.pattern, &string, "stdin", &config));
-                        }
+        stdin_grep(data, config);
+    }
+    else {
+        file_grep(data, config);
+    }
+}
+
+fn stdin_grep(data : Data, config : Config) {
+    let mut num_matches = 0;
+    let stdin = io::stdin();
+    for string in stdin.lock().lines() {
+        match string {
+            Ok(string) => {
+                if is_match(&data.pattern, &string, &config) {
+                    num_matches += 1;
+                    if !config.c {
+                        println!("{}", get_result_string(&data.pattern, &string, "stdin", &config));
                     }
-                    if num_matches_m >= config.num {
+                    if num_matches >= config.num {
                         break;
                     }
-                },
-                Err(_) => panic!("error with read line from stdin"),
-            }
-        }
-
-        if config.c {
-            println!("{}", get_result_string_c(num_matches_c, "stdin", &config));
+                }
+            },
+            Err(_) => panic!("error with read line from stdin"),
         }
     }
 
+    if config.c {
+        println!("{}", get_result_string_c(num_matches, "stdin", &config));
+    }
+}
+
+fn file_grep(data : Data, config : Config) {
+    let mut num_matches_m = 0;
     for file in data.files {
         let mut num_matches_c = 0;
-        if num_matches_m >= config.num {
-            break;
-        }
         let infile = fs::read_to_string(&file).expect("error with read file");
         let result = infile.split('\n');
         for string in result {
@@ -54,9 +52,6 @@ pub fn grep(data : Data, config : Config) {
                 else {
                     println!("{}", get_result_string(&data.pattern, &string, &file, &config));
                     num_matches_m += 1;
-                    if num_matches_m >= config.num {
-                        break;
-                    }
                 }
                 if num_matches_m >= config.num {
                     break;
@@ -65,6 +60,9 @@ pub fn grep(data : Data, config : Config) {
         }
         if config.c {
             println!("{}", get_result_string_c(num_matches_c, &file, &config));
+        }
+        if num_matches_m >= config.num {
+            break;
         }
     }
 }
