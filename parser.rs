@@ -1,3 +1,5 @@
+use std::process;
+
 pub struct Config {
     pub v : bool,
     pub h : bool,
@@ -35,7 +37,10 @@ pub fn parse_input(args : Vec<String>) -> (Data, Config) {
         let mut arg : String = "".to_string(); 
         match arg_char {
             Some(arg_char) => arg = arg_char.to_string(),
-            None => panic!("error with parse input"),
+            None => {
+                eprintln!("grep error: error with parse input");
+                process::exit(1);
+            },
         }
 
         if data.pattern == "" && arg != "-" {
@@ -51,7 +56,10 @@ pub fn parse_input(args : Vec<String>) -> (Data, Config) {
                 let num = args[i].parse::<i32>();
                 match num {
                     Ok(num)  => config.num = num,
-                    Err(num) => panic!("error with option -m: {:?}", num),
+                    Err(num) => {
+                        eprintln!("grep error: error with option -m: {:?}", num);
+                        process::exit(1);
+                    },
                 }
             }
             i += 1;
@@ -95,8 +103,9 @@ pub fn parse_input(args : Vec<String>) -> (Data, Config) {
             },
 
             _ => {
-                panic!("unknown option {}", option);
-            }
+                eprintln!("grep error: unknown option {}", option);
+                process::exit(1);
+            },
         }
     }
 

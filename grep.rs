@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::{self, BufRead};
+use std::process;
 
 use parser::{Data, Config};
 
@@ -28,7 +29,10 @@ fn stdin_grep(data : Data, config : Config) {
                     }
                 }
             },
-            Err(_) => panic!("error with read line from stdin"),
+            Err(_) => {
+                eprintln!("grep error: error with read line from stdin");
+                process::exit(1);
+            },
         }
     }
 
